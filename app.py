@@ -1,14 +1,22 @@
 from flask import Flask, request, render_template, jsonify
 import os
 import subprocess
+import time
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Garante que a pasta de uploads exista
+LOG_FILE = 'logs.txt'  # Arquivo onde os logs serão salvos
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def escrever_log(mensagem):
+    """Função para adicionar mensagens ao arquivo de log."""
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(mensagem + "\n")
 
 @app.route('/')
 def upload_form():
-    return render_template('upload.html')  # Renderiza a página de upload
+    return render_template('upload.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -20,12 +28,35 @@ def upload_file():
         return jsonify({"error": "Nome do arquivo inválido"}), 400
 
     filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(filepath)  # Salva o arquivo CSV no servidor
+    file.save(filepath)  
 
-    # 🔹 Executa o script enviar_contatos.py passando o caminho do arquivo CSV
-    result = subprocess.run(['python3', 'enviar_contatos.py', filepath], capture_output=True, text=True)
+    escrever_log(f"🚀 Iniciando processamento do arquivo: {file.filename}")
 
-    return jsonify({"message": "Arquivo processado!", "output": result.stdout, "error": result.stderr})
+    # Executa enviar_contatos.py e captura a saída em tempo real
+    process = subprocess.Popen(
+        ['python3', 'enviar_contatos.py', filepath], 
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+
+    for line in iter(process.stdout.readline, ''):
+        escrever_log(line.strip())  # Escreve cada linha de saída no log
+        time.sleep(0.1)  # Pequeno delay para evitar bloqueio
+
+    process.stdout.close()
+    process.wait()
+
+    return jsonify({"message": "Processamento iniciado!", "log_url": "/logs"})
+
+@app.route('/logs', methods=['GET'])
+def get_logs():
+    """Retorna os logs armazenados no arquivo `logs.txt`."""
+    if not os.path.exists(LOG_FILE):
+        return jsonify({"log": "Nenhum log disponível ainda."})
+
+    with open(LOG_FILE, "r", encoding="utf-8") as f:
+        logs = f.readlines()
+    
+    return jsonify({"log": logs})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=10000, debug=True)
