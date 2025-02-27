@@ -1,10 +1,10 @@
-import sys  # Para capturar o nome do arquivo via argumento
+import sys
 import importlib
 import requests
 import pandas as pd
 import openpyxl
 
-# Recarregar os módulos
+# Recarregar módulos
 importlib.reload(requests)
 importlib.reload(pd)
 importlib.reload(openpyxl)
@@ -16,35 +16,42 @@ HEADERS = {
     "content-type": "application/json",
     "X-API-Key": "uliwgfxc19o8p00i1nsm67wa8hze0q3nqklek6vivdjwbgyd0lt1wz2uc1h8l7z0"
 }
+LOCALE = "pt"
 
-LOCALE = "pt"  # Locale fixo para todos
-
-# 🔹 Lendo o nome do arquivo CSV a partir do argumento
+# Lendo o nome do arquivo CSV a partir do argumento
 if len(sys.argv) < 2:
     print("Erro: Nenhum arquivo CSV especificado.")
     sys.exit(1)
 
-csv_file = sys.argv[1]  # Nome do arquivo passado como argumento pelo `app.py`
+csv_file = sys.argv[1]
 
-# 🔹 Tentando carregar o arquivo CSV correto
+# Função para salvar logs
+def escrever_log(mensagem):
+    with open("logs.txt", "a", encoding="utf-8") as f:
+        f.write(mensagem + "\n")
+
 try:
     df = pd.read_csv(csv_file)
 except FileNotFoundError:
-    print(f"Erro: O arquivo '{csv_file}' não foi encontrado.")
+    escrever_log(f"Erro: O arquivo '{csv_file}' não foi encontrado.")
     sys.exit(1)
 
 # Exibir colunas para depuração
-print("Colunas encontradas no CSV:", df.columns.tolist())
+escrever_log(f"📊 Colunas encontradas no CSV: {df.columns.tolist()}")
 
 # Normalizar os nomes das colunas
 df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
 # Verificar se a coluna "email" existe
 if "email" not in df.columns:
-    print("Erro: A coluna 'Email' não foi encontrada no arquivo CSV.")
+    escrever_log("Erro: A coluna 'Email' não foi encontrada no arquivo CSV.")
     sys.exit(1)
 
-# 🔹 Processamento dos emails
+# 🔹 Contadores
+total_linhas = len(df)
+status_422_count = 0
+
+# Processamento dos emails
 for email in df["email"].dropna():
     payload = {
         "email": email,
@@ -57,8 +64,12 @@ for email in df["email"].dropna():
     response = requests.post(URL, json=payload, headers=HEADERS)
 
     if response.status_code == 422:
-        print(f"⚠️ Falha ao enviar {email} - Status: 422 - Este email já existe.")
+        escrever_log(f"⚠️ Falha ao enviar {email} - Status: 422 - Este email já existe.")
+        status_422_count += 1
     else:
-        print(f"✅ Enviado com sucesso para {email} - Status: {response.status_code}")
+        escrever_log(f"✅ Enviado com sucesso para {email} - Status: {response.status_code}")
 
-print("🚀 Processo concluído!")
+# 🔹 Registrar contagem total no final do log
+escrever_log(f"📌 Total de linhas carregadas: {total_linhas}")
+escrever_log(f"❌ Total de erros Status 422: {status_422_count}")
+escrever_log("🚀 Processamento concluído!")

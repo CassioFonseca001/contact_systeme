@@ -28,10 +28,16 @@
 </head>
 <body>
     <h2>Monitoramento de Logs</h2>
+
+    <p><strong>📌 Total de Linhas Carregadas:</strong> <span id="total-linhas">0</span></p>
+    <p><strong>❌ Total de Erros 422:</strong> <span id="status-422">0</span></p>
+
     <div id="log-container"></div>
 
     <script>
         let logContainer = document.getElementById("log-container");
+        let totalLinhas = document.getElementById("total-linhas");
+        let status422 = document.getElementById("status-422");
 
         function conectarStreamLogs() {
             const eventSource = new EventSource("/stream-logs");
@@ -41,8 +47,14 @@
                 logLine.textContent = event.data;
 
                 // Destacar status 422
-                if (event.data.includes("b8559cec-4cad-4b9a-b357-17757d34c9ed")) {
+                if (event.data.includes("Status: 422")) {
                     logLine.classList.add("status-422");
+                    status422.textContent = parseInt(status422.textContent) + 1;
+                }
+
+                // Atualizar total de linhas carregadas
+                if (event.data.includes("Total de linhas carregadas:")) {
+                    totalLinhas.textContent = event.data.split(": ")[1];
                 }
 
                 logContainer.appendChild(logLine);
