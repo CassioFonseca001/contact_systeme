@@ -85,4 +85,4 @@ for email in df["email"].dropna():
 escrever_log(f"📌 Total de emails carregados: {total_linhas}")
 escrever_log(f"✅ Total de sucessos: {status_sucesso_count}")
 escrever_log(f"❌ Total de erros Status 422: {status_422_count}")
-#escrever_log("🚀 Processamento concluído!")
+escrever_log("🚀 Processamento concluído!")
