@@ -24,12 +24,17 @@
             color: red;
             font-weight: bold;
         }
+        .status-sucesso {
+            color: green;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <h2>Monitoramento de Logs</h2>
 
     <p><strong>📌 Total de Linhas Carregadas:</strong> <span id="total-linhas">0</span></p>
+    <p><strong>✅ Total de Sucessos:</strong> <span id="status-sucesso">0</span></p>
     <p><strong>❌ Total de Erros 422:</strong> <span id="status-422">0</span></p>
 
     <div id="log-container"></div>
@@ -40,11 +45,12 @@
     <script>
         let logContainer = document.getElementById("log-container");
         let totalLinhas = document.getElementById("total-linhas");
+        let statusSucesso = document.getElementById("status-sucesso");
         let status422 = document.getElementById("status-422");
 
         let ctx = document.getElementById("statusChart").getContext("2d");
         let statusChart = new Chart(ctx, {
-            type: "bar",
+            type: "pie", // 🔹 Alterado para gráfico de pizza
             data: {
                 labels: ["Enviados", "Erros 422"],
                 datasets: [{
@@ -54,10 +60,7 @@
                 }]
             },
             options: {
-                responsive: true,
-                scales: {
-                    y: { beginAtZero: true }
-                }
+                responsive: true
             }
         });
 
@@ -77,11 +80,18 @@
                 let logLine = document.createElement("p");
                 logLine.textContent = log;
 
-                // Destacar status 422
+                // Atualizar contador de erros 422
                 if (log.includes("Status: 422")) {
                     logLine.classList.add("status-422");
                     totalErros++;
                     status422.textContent = totalErros;
+                }
+
+                // Atualizar contador de sucessos
+                if (log.includes("✅ Enviado com sucesso")) {
+                    logLine.classList.add("status-sucesso");
+                    totalEnviados++;
+                    statusSucesso.textContent = totalEnviados;
                 }
 
                 // Atualizar total de linhas carregadas
@@ -89,16 +99,11 @@
                     totalLinhas.textContent = log.split(": ")[1];
                 }
 
-                // Atualizar contagem de e-mails enviados
-                if (log.includes("✅ Enviado com sucesso")) {
-                    totalEnviados++;
-                }
-
                 // Adicionar log na tela
                 logContainer.appendChild(logLine);
                 logContainer.scrollTop = logContainer.scrollHeight; // Rola para o final automaticamente
 
-                // Atualizar o gráfico
+                // Atualizar o gráfico de pizza
                 atualizarGrafico(totalEnviados, totalErros);
             };
 
