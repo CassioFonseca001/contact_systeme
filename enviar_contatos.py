@@ -56,6 +56,7 @@ if "email" not in df.columns:
 # 🔹 Contadores
 total_linhas = len(df)
 status_422_count = 0
+status_sucesso_count = 0  # Contador de e-mails cadastrados com sucesso
 
 # Processamento dos emails
 for email in df["email"].dropna():
@@ -69,10 +70,11 @@ for email in df["email"].dropna():
 
         if response.status_code in range(200, 300):
             escrever_log(f"✅ {email} cadastrado com sucesso")
+            status_sucesso_count += 1  # Contabiliza sucesso
         elif response.status_code == 422:
             mensagem_erro = tratar_erro_422(response.text)
             escrever_log(f"⚠️ Erro 422 para {email}: {mensagem_erro}")
-            status_422_count += 1
+            status_422_count += 1  # Contabiliza erro 422
         else:
             escrever_log(f"❌ Falha ao enviar {email} - Status: {response.status_code}")
 
@@ -80,6 +82,7 @@ for email in df["email"].dropna():
         escrever_log(f"❌ Erro ao enviar {email}: {e}")
 
 # 🔹 Registrar contagem total no final do log
-#escrever_log(f"📌 Total de emails carregados: {total_linhas}")
-#escrever_log(f"❌ Total de erros Status 422: {status_422_count}")
+escrever_log(f"📌 Total de emails carregados: {total_linhas}")
+escrever_log(f"✅ Total de sucessos: {status_sucesso_count}")
+escrever_log(f"❌ Total de erros Status 422: {status_422_count}")
 #escrever_log("🚀 Processamento concluído!")
