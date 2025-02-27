@@ -30,6 +30,10 @@ def upload_file():
     filepath = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(filepath)  
 
+    # 🔹 Limpar o logs.txt antes de iniciar o novo processamento
+    with open(LOG_FILE, "w", encoding="utf-8") as f:
+        f.write("")  # Esvazia o conteúdo do arquivo
+
     escrever_log(f"🚀 Iniciando processamento do arquivo: {file.filename}")
 
     # Executa enviar_contatos.py e captura a saída em tempo real
