@@ -1,5 +1,0 @@
-Colunas encontradas no CSV: ['email']
-⚠️ Falha ao enviar contato1@email.com - Status: 422, Erro: {"type":"https:\/\/tools.ietf.org\/html\/rfc2616#section-10","title":"An error occurred","detail":"email: Este valor já está a ser usado.","violations":[{"propertyPath":"email","message":"Este valor já está a ser usado.","code":"b8559cec-4cad-4b9a-b357-17757d34c9ed"}]}
-⚠️ Falha ao enviar contato2@email.com - Status: 422, Erro: {"type":"https:\/\/tools.ietf.org\/html\/rfc2616#section-10","title":"An error occurred","detail":"email: Este valor já está a ser usado.","violations":[{"propertyPath":"email","message":"Este valor já está a ser usado.","code":"b8559cec-4cad-4b9a-b357-17757d34c9ed"}]}
-⚠️ Falha ao enviar contato3@email.com - Status: 422, Erro: {"type":"https:\/\/tools.ietf.org\/html\/rfc2616#section-10","title":"An error occurred","detail":"email: Este valor já está a ser usado.","violations":[{"propertyPath":"email","message":"Este valor já está a ser usado.","code":"b8559cec-4cad-4b9a-b357-17757d34c9ed"}]}
-🚀 Processo concluído!
