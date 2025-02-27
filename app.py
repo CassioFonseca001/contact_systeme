@@ -2,17 +2,19 @@ from flask import Flask, request, render_template, jsonify, Response
 import os
 import subprocess
 import time
+import threading
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
-LOG_FILE = 'logs.txt'  # Arquivo onde os logs serão salvos
+LOG_FILE = 'logs.txt'
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def escrever_log(mensagem):
-    """Função para adicionar mensagens ao arquivo de log."""
+    """Escreve logs no arquivo e imprime no console para depuração."""
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(mensagem + "\n")
+    print(mensagem)  # Para debug
 
 @app.route('/')
 def upload_form():
@@ -20,6 +22,7 @@ def upload_form():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    """Recebe o arquivo CSV e inicia o processamento em segundo plano."""
     if 'file' not in request.files:
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
 
@@ -27,41 +30,50 @@ def upload_file():
     if file.filename == '':
         return jsonify({"error": "Nome do arquivo inválido"}), 400
 
-    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(filepath)  
-
-    # 🔹 Limpar o logs.txt antes de iniciar o novo processamento
+    # Limpa o logs.txt antes do novo upload
     with open(LOG_FILE, "w", encoding="utf-8") as f:
-        f.write("")  # Esvazia o conteúdo do arquivo
+        f.write("")
+
+    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(filepath)
 
     escrever_log(f"🚀 Iniciando processamento do arquivo: {file.filename}")
 
-    # Executa enviar_contatos.py e captura a saída em tempo real
-    process = subprocess.Popen(
-        ['python3', 'enviar_contatos.py', filepath], 
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
+    # 🔹 Executar o processamento em SEGUNDO PLANO usando Thread
+    def processar_arquivo():
+        process = subprocess.Popen(
+            ['python3', 'enviar_contatos.py', filepath], 
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
 
-    for line in iter(process.stdout.readline, ''):
-        escrever_log(line.strip())  # Escreve cada linha de saída no log
-        time.sleep(0.1)  # Pequeno delay para evitar bloqueio
+        for line in iter(process.stdout.readline, ''):
+            escrever_log(line.strip())  # Escreve cada linha no log em tempo real
+            time.sleep(0.1)
 
-    process.stdout.close()
-    process.wait()
+        process.stdout.close()
+        process.wait()
 
-    return jsonify({"message": "Processamento iniciado!", "log_url": "/logs"})
+        escrever_log("🚀 Processamento concluído!")
 
-@app.route('/logs', methods=['GET'])
-def get_logs():
-    """Retorna os logs armazenados no arquivo `logs.txt` de forma legível."""
-    if not os.path.exists(LOG_FILE):
-        return Response("Nenhum log disponível ainda.", mimetype="text/plain")
+    # Inicia a thread para processar sem travar o Flask
+    thread = threading.Thread(target=processar_arquivo)
+    thread.start()
 
-    with open(LOG_FILE, "r", encoding="utf-8") as f:
-        logs = f.read()
+    return jsonify({"message": "Upload realizado com sucesso!", "log_url": "/logs-page"})
 
-    # Retorna como texto simples, evitando caracteres Unicode codificados
-    return Response(logs, mimetype="text/plain")
+@app.route('/stream-logs')
+def stream_logs():
+    """Faz streaming dos logs em tempo real para o frontend."""
+    def gerar_logs():
+        """Lê e transmite os logs continuamente."""
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            while True:
+                line = f.readline()
+                if line:
+                    yield f"data: {line}\n\n"
+                time.sleep(1)  # Aguarda um pouco antes de verificar novamente
+
+    return Response(gerar_logs(), mimetype='text/event-stream')
 
 @app.route('/logs-page')
 def logs_page():
