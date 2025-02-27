@@ -55,10 +55,7 @@ status_422_count = 0
 for email in df["email"].dropna():
     payload = {
         "email": email,
-        "locale": LOCALE,
-        "fields": [
-            {"slug": "tags", "value": "Contatos-Site"}
-        ]
+        "locale": LOCALE
     }
 
     response = requests.post(URL, json=payload, headers=HEADERS)
