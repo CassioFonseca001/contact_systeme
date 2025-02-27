@@ -1,13 +1,7 @@
 import sys
-import importlib
 import requests
 import pandas as pd
 import openpyxl
-
-# Recarregar módulos
-importlib.reload(requests)
-importlib.reload(pd)
-importlib.reload(openpyxl)
 
 # Configuração da API
 URL = "https://api.systeme.io/api/contacts"
@@ -58,15 +52,20 @@ for email in df["email"].dropna():
         "locale": LOCALE
     }
 
-    response = requests.post(URL, json=payload, headers=HEADERS)
+    try:
+        response = requests.post(URL, json=payload, headers=HEADERS)
 
-    if response.status_code == 422:
-        escrever_log(f"⚠️ Falha ao enviar {email} - Status: 422 - Este email já existe.")
-        status_422_count += 1
-    else:
-        escrever_log(f"✅ Enviado com sucesso para {email} - Status: {response.status_code}")
+        if response.status_code in range(200, 300):
+            escrever_log(f"✅ Enviado com sucesso para {email} - Status: {response.status_code}")
+        else:
+            escrever_log(f"⚠️ Falha ao enviar {email} - Status: {response.status_code}, Erro: {response.text}")
+            if response.status_code == 422:
+                status_422_count += 1  # Contabiliza apenas erros 422
+
+    except requests.exceptions.RequestException as e:
+        escrever_log(f"❌ Erro ao enviar {email}: {e}")
 
 # 🔹 Registrar contagem total no final do log
-escrever_log(f"📌 Total de linhas carregadas: {total_linhas}")
+escrever_log(f"📌 Total de emails carregados: {total_linhas}")
 escrever_log(f"❌ Total de erros Status 422: {status_422_count}")
 escrever_log("🚀 Processamento concluído!")
