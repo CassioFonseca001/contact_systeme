@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Logs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #log-container {
+            width: 80%;
+            height: 400px;
+            margin: auto;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #f8f8f8;
+            overflow-y: scroll;
+            text-align: left;
+        }
+        .status-422 {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+   <script>
+    function atualizarLogs() {
+        fetch("/logs")
+        .then(response => response.text())  // Agora pegamos como texto puro
+        .then(data => {
+            let logContainer = document.getElementById("log-container");
+            logContainer.innerHTML = "";  // Limpa antes de adicionar novos logs
+            
+            let totalLinhas = 0;
+            let statusCode422 = 0;
+
+            let lines = data.split("\n");  // Divide os logs em linhas
+            lines.forEach(line => {
+                if (line.trim() === "") return;  // Pula linhas vazias
+                totalLinhas++;
+
+                let logLine = document.createElement("p");
+                
+                if (line.includes("b8559cec-4cad-4b9a-b357-17757d34c9ed")) {
+                    logLine.classList.add("status-422");
+                    statusCode422++;
+                }
+
+                logLine.textContent = line;
+                logContainer.appendChild(logLine);
+            });
+
+            document.getElementById("total-linhas").textContent = totalLinhas - 1; // Remove cabeçalho
+            document.getElementById("status-422").textContent = statusCode422;
+        })
+        .catch(error => console.error("Erro ao buscar logs:", error));
+    }
+
+    setInterval(atualizarLogs, 5000); // Atualiza os logs a cada 30 segundos
+    window.onload = atualizarLogs; // Atualiza ao carregar a página
+</script>
+</head>
+<body>
+    <h2>Monitoramento de Logs</h2>
+    <p>Linhas carregadas (a partir da segunda linha): <span id="total-linhas">0</span></p>
+    <p>Emails já existentes (Status 422): <span id="status-422">0</span></p>
+    <div id="log-container"></div>
+</body>
+</html>

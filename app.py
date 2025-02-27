@@ -49,14 +49,16 @@ def upload_file():
 
 @app.route('/logs', methods=['GET'])
 def get_logs():
-    """Retorna os logs armazenados no arquivo `logs.txt`."""
+    """Retorna os logs armazenados no arquivo `logs.txt` de forma legível."""
     if not os.path.exists(LOG_FILE):
-        return jsonify({"log": "Nenhum log disponível ainda."})
+        return Response("Nenhum log disponível ainda.", mimetype="text/plain")
 
     with open(LOG_FILE, "r", encoding="utf-8") as f:
-        logs = f.readlines()
-    
-    return jsonify({"log": logs})
+        logs = f.read()
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=10000, debug=True)
+    # Retorna como texto simples, evitando caracteres Unicode codificados
+    return Response(logs, mimetype="text/plain")
+
+@app.route('/logs-page')
+def logs_page():
+    return render_template('logs.html')  # Exibe a página de logs
