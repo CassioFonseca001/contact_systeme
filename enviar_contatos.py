@@ -69,7 +69,7 @@ for email in df["email"].dropna():
         response = requests.post(URL, json=payload, headers=HEADERS)
 
         if response.status_code in range(200, 300):
-            escrever_log(f"✅ {email} cadastrado com sucesso")
+            escrever_log(f"✅ Enviado com sucesso para {email}")
             status_sucesso_count += 1  # Contabiliza sucesso
         elif response.status_code == 422:
             mensagem_erro = tratar_erro_422(response.text)
@@ -82,7 +82,7 @@ for email in df["email"].dropna():
         escrever_log(f"❌ Erro ao enviar {email}: {e}")
 
 # 🔹 Registrar contagem total no final do log
-escrever_log(f"📌 Total de emails carregados: {total_linhas}")
+escrever_log(f"📌 Total de linhas carregadas: {total_linhas}")
 escrever_log(f"✅ Total de sucessos: {status_sucesso_count}")
-escrever_log(f"❌ Total de erros Status 422: {status_422_count}")
+escrever_log(f"❌ Total de erros 422: {status_422_count}")
 escrever_log("🚀 Processamento concluído!")
