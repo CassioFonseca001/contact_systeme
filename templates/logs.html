@@ -29,28 +29,40 @@
             font-weight: bold;
         }
         .header-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .stats-container {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            width: 80%;
+            margin: auto;
+        }
+        .stats-table {
+            text-align: left;
         }
         .chart-container {
-            width: 200px;
-            height: 200px;
-            margin-left: 20px;
+            width: 250px;
+            height: 250px;
         }
     </style>
 </head>
 <body>
     <div class="header-container">
         <h2>Monitoramento de Logs</h2>
+    </div>
+
+    <div class="stats-container">
+        <table class="stats-table">
+            <tr><td><strong>📌 Total de Linhas Carregadas:</strong></td> <td><span id="total-linhas">0</span></td></tr>
+            <tr><td><strong>✅ Total de Sucessos:</strong></td> <td><span id="status-sucesso">0</span></td></tr>
+            <tr><td><strong>❌ Total de Erros 422:</strong></td> <td><span id="status-422">0</span></td></tr>
+        </table>
         <div class="chart-container">
             <canvas id="statusChart"></canvas>
         </div>
     </div>
-
-    <p><strong>📌 Total de Linhas Carregadas:</strong> <span id="total-linhas">0</span></p>
-    <p><strong>✅ Total de Sucessos:</strong> <span id="status-sucesso">0</span></p>
-    <p><strong>❌ Total de Erros 422:</strong> <span id="status-422">0</span></p>
 
     <div id="log-container"></div>
 
