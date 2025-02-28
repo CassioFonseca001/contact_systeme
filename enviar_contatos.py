@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import openpyxl
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 # Configuração da API
 URL = "https://api.systeme.io/api/contacts"
@@ -58,16 +59,15 @@ total_linhas = len(df)
 status_422_count = 0
 status_sucesso_count = 0  # Contador de e-mails cadastrados com sucesso
 
-# Processamento dos emails
-for email in df["email"].dropna():
+# Função para enviar email
+def enviar_email(email):
+    global status_sucesso_count, status_422_count
     payload = {
         "email": email,
         "locale": LOCALE
     }
-
     try:
         response = requests.post(URL, json=payload, headers=HEADERS)
-
         if response.status_code in range(200, 300):
             escrever_log(f"✅ Enviado com sucesso para {email}")
             status_sucesso_count += 1  # Contabiliza sucesso
@@ -77,9 +77,12 @@ for email in df["email"].dropna():
             status_422_count += 1  # Contabiliza erro 422
         else:
             escrever_log(f"❌ Falha ao enviar {email} - Status: {response.status_code}")
-
     except requests.exceptions.RequestException as e:
         escrever_log(f"❌ Erro ao enviar {email}: {e}")
+
+# 🔹 Enviar e-mails em paralelo
+with ThreadPoolExecutor(max_workers=5) as executor:
+    executor.map(enviar_email, df["email"].dropna())
 
 # 🔹 Registrar contagem total no final do log
 escrever_log(f"📌 Total de linhas carregadas: {total_linhas}")
