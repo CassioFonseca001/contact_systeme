@@ -28,10 +28,25 @@
             color: green;
             font-weight: bold;
         }
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chart-container {
+            width: 200px;
+            height: 200px;
+            margin-left: 20px;
+        }
     </style>
 </head>
 <body>
-    <h2>Monitoramento de Logs</h2>
+    <div class="header-container">
+        <h2>Monitoramento de Logs</h2>
+        <div class="chart-container">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
 
     <p><strong>📌 Total de Linhas Carregadas:</strong> <span id="total-linhas">0</span></p>
     <p><strong>✅ Total de Sucessos:</strong> <span id="status-sucesso">0</span></p>
@@ -40,7 +55,6 @@
     <div id="log-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <canvas id="statusChart" width="400" height="200"></canvas>
 
     <script>
         let logContainer = document.getElementById("log-container");
@@ -60,12 +74,12 @@
                 }]
             },
             options: {
-                responsive: true
+                responsive: true,
+                maintainAspectRatio: false
             }
         });
 
-        function atualizarGrafico(sucessos, erros) {
-            statusChart.data.datasets[0].data = [sucessos, erros];
+        function atualizarGrafico() {
             statusChart.update();
         }
 
@@ -79,26 +93,25 @@
                 let logLine = document.createElement("p");
                 logLine.textContent = log;
 
-                if (log.includes("❌ Total de erros 422:")) {
-                    let valor = log.split(": ")[1];
-                    totalErros = parseInt(valor) || 0;
-                    status422.textContent = totalErros;
-                }
-
-                if (log.includes("✅ Total de sucessos:")) {
-                    let valor = log.split(": ")[1];
-                    totalEnviados = parseInt(valor) || 0;
+                if (log.includes("Enviado com sucesso")) {
+                    totalEnviados++;
                     statusSucesso.textContent = totalEnviados;
                 }
 
-                if (log.includes("📌 Total de linhas carregadas:")) {
+                if (log.includes("Erro 422")) {
+                    totalErros++;
+                    status422.textContent = totalErros;
+                }
+
+                if (log.includes("Total de linhas carregadas:")) {
                     let valor = log.split(": ")[1];
                     totalLinhas.textContent = valor;
                 }
 
                 logContainer.appendChild(logLine);
                 logContainer.scrollTop = logContainer.scrollHeight;
-                atualizarGrafico(totalEnviados, totalErros);
+                statusChart.data.datasets[0].data = [totalEnviados, totalErros];
+                atualizarGrafico();
             };
 
             eventSource.onerror = function() {
