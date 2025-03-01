@@ -1,14 +1,32 @@
 from flask import Flask, request, render_template, jsonify, Response
 import os
 import subprocess
-import time
 import threading
+import time
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 LOG_FILE = 'logs.txt'
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def processar_arquivo(filepath):
+    """Executa enviar_contatos.py em um subprocesso sem bloquear a requisição e captura logs."""
+    escrever_log(f"🚀 Iniciando processamento do arquivo: {filepath}")
+
+    process = subprocess.Popen(
+        ['python3', 'enviar_contatos.py', filepath], 
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+
+    for line in iter(process.stdout.readline, ''):
+        escrever_log(line.strip())  # Escreve cada linha no log em tempo real
+        time.sleep(0.1)  # Pequena pausa para evitar alto consumo de CPU
+
+    process.stdout.close()
+    process.wait()
+
+    escrever_log("✅ Processamento concluído!")
 
 def escrever_log(mensagem):
     """Escreve logs no arquivo e imprime no console para depuração."""
@@ -30,36 +48,18 @@ def upload_file():
     if file.filename == '':
         return jsonify({"error": "Nome do arquivo inválido"}), 400
 
+    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(filepath)
+
     # Limpa o logs.txt antes do novo upload
     with open(LOG_FILE, "w", encoding="utf-8") as f:
         f.write("")
 
-    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(filepath)
-
-    escrever_log(f"🚀 Iniciando processamento do arquivo: {file.filename}")
-
-    # 🔹 Executar o processamento em SEGUNDO PLANO usando Thread
-    def processar_arquivo():
-        process = subprocess.Popen(
-            ['python3', 'enviar_contatos.py', filepath], 
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-
-        for line in iter(process.stdout.readline, ''):
-            escrever_log(line.strip())  # Escreve cada linha no log em tempo real
-            time.sleep(0.1)
-
-        process.stdout.close()
-        process.wait()
-
-        escrever_log("🚀 Processamento concluído!")
-
-    # Inicia a thread para processar sem travar o Flask
-    thread = threading.Thread(target=processar_arquivo)
+    # Inicia a thread para processar o arquivo sem travar o Flask
+    thread = threading.Thread(target=processar_arquivo, args=(filepath,))
     thread.start()
 
-    return jsonify({"message": "Upload realizado com sucesso!", "log_url": "/logs-page"})
+    return jsonify({"message": "Upload realizado com sucesso!", "log_url": "/logs-page"}), 202
 
 @app.route('/stream-logs')
 def stream_logs():
